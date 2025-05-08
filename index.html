@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#007bff" />
+    <link rel="shortcut icon" href="/daily-stories-app/favicon.png" />
+    <link rel="manifest" href="/daily-stories-app/manifest.json" />
+    <link rel="apple-touch-icon" href="/daily-stories-app/favicon.png" />
+    <title>Daily Stories App</title>
+    <link rel="stylesheet" href="/leaflet.css" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      /* Style untuk Skip to Content Link */
+      .skip-link {
+        position: absolute;
+        top: 10px;
+        left: 16px;
+        padding: 10px 16px;
+        background-color: #f1f1f1; /* Soft background color */
+        color: #007bff; /* Text color blue */
+        font-size: 16px;
+        font-weight: bold;
+        border: 2px solid #007bff; /* Border matching text color */
+        border-radius: 6px;
+        z-index: 1000;
+        opacity: 0; /* Initially hidden */
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        text-decoration: none;
+        min-width: 44px;
+        min-height: 44px;
+        line-height: 24px;
+      }
+
+      /* Display the link when it receives focus */
+      .skip-link:focus {
+        opacity: 1; /* Show the link */
+        transform: translateY(0); /* Move to its original position */
+      }
+
+      /* Hover effect to make the link more interactive */
+      .skip-link:hover {
+        background-color: #007bff;
+        color: white;
+      }
+
+      /* Adding some space below header */
+      header {
+        margin-bottom: 20px;
+      }
+
+      body {
+        font-family: sans-serif;
+        margin: 0;
+      }
+
+      nav a {
+        margin-right: 10px;
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-block;
+        padding: 10px;
+        line-height: 24px;
+      }
+
+      main {
+        padding: 20px;
+      }
+
+      /* Other general styles */
+      .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+      }
+
+      .navigation-drawer {
+        background-color: #fff;
+      }
+
+      /* Improved dropdown styling for accessibility */
+      #user-dropdown {
+        position: relative;
+      }
+
+      #username {
+        cursor: pointer;
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-block;
+        padding: 10px;
+        line-height: 24px;
+        font-weight: bold;
+      }
+
+      #dropdown-menu {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-width: 120px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      #dropdown-menu li {
+        padding: 0;
+      }
+
+      #dropdown-menu a {
+        display: block;
+        padding: 10px;
+        text-decoration: none;
+        min-width: 44px;
+        min-height: 44px;
+      }
+
+      /* Drawer button for mobile */
+      .drawer-button {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* App shell styles */
+      .app-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .app-content {
+        flex: 1;
+      }
+
+      /* Custom notification subscription button */
+      #pushNotificationBtn {
+        margin-top: 20px;
+        padding: 10px 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        min-width: 44px;
+        min-height: 44px;
+      }
+
+      #pushNotificationBtn:hover {
+        background-color: #0069d9;
+      }
+
+      /* Offline indicator */
+      .offline-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        z-index: 1000;
+        display: none;
+      }
+
+      /* Toast notification */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #28a745;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        max-width: 300px;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+    <script type="module" crossorigin src="/daily-stories-app/assets/index-BkhrniT_.js"></script>
+    <link rel="stylesheet" crossorigin href="/daily-stories-app/assets/index-hs7v-kmE.css">
+  </head>
+  <body>
+    <!-- Skip to Content Link: Placed before the header for accessibility -->
+    <a
+      href="#main-content"
+      class="skip-link"
+      id="skipToContentLink"
+      tabindex="0"
+      aria-label="Skip to main content"
+      >Skip to content</a
+    >
+
+    <div class="app-shell">
+      <!-- Offline indicator -->
+      <div id="offlineIndicator" class="offline-indicator">
+        You are currently offline
+      </div>
+
+      <!-- Toast notification for saved items -->
+      <div id="toast" class="toast"></div>
+
+      <header>
+        <div class="main-header container">
+          <a
+            class="brand-name highlight"
+            href="#/"
+            aria-label="Daily Stories App - Homepage"
+            >Daily Stories App</a
+          >
+
+          <nav
+            id="navigation-drawer"
+            class="navigation-drawer"
+            aria-label="Main Navigation"
+          >
+            <ul id="nav-list" class="nav-list" role="menubar">
+              <li role="menuitem">
+                <a href="#main-content" aria-label="Home">Beranda</a>
+              </li>
+              <li role="menuitem">
+                <a
+                  href="#/login"
+                  id="login-link"
+                  aria-label="Log in to your account"
+                  >Login</a
+                >
+              </li>
+              <li role="menuitem">
+                <div id="user-dropdown" style="display: none" role="menu">
+                  <span
+                    id="username"
+                    tabindex="0"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  ></span>
+                  <ul id="dropdown-menu" role="menu">
+                    <li role="menuitem">
+                      <a
+                        href="#/login"
+                        id="logout-link"
+                        aria-label="Log out from your account"
+                        >Logout</a
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li role="menuitem">
+                <a
+                  href="#/register"
+                  id="register-link"
+                  aria-label="Register a new account"
+                  >Register</a
+                >
+              </li>
+              <li role="menuitem">
+                <a
+                  href="#/saved"
+                  id="saved-link"
+                  aria-label="View saved stories"
+                  >Saved Stories</a
+                >
+              </li>
+            </ul>
+          </nav>
+
+          <button
+            id="drawer-button"
+            class="drawer-button"
+            aria-label="Toggle navigation menu"
+            aria-controls="navigation-drawer"
+            aria-expanded="false"
+          >
+            ☰
+          </button>
+        </div>
+      </header>
+
+      <!-- Konten Utama yang bisa difokuskan pertama kali -->
+      <main id="main-content" class="main-content app-content" tabindex="-1">
+        <div id="content-placeholder">Loading content...</div>
+      </main>
+
+      <footer>
+        <div class="container">
+          <p>&copy; 2023 Daily Stories App</p>
+          <button
+            id="pushNotificationBtn"
+            aria-label="Enable push notifications"
+          >
+            Enable Notifications
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // JavaScript untuk memastikan fokus dipindahkan ke konten utama saat "Skip to Content" diklik
+      document
+        .getElementById("skipToContentLink")
+        .addEventListener("click", function (e) {
+          // Mencegah perilaku default anchor tag
+          e.preventDefault();
+
+          // Fokuskan elemen dengan ID "main-content"
+          const mainContent = document.getElementById("main-content");
+          mainContent.focus();
+        });
+
+      // Toggle mobile navigation
+      document
+        .getElementById("drawer-button")
+        .addEventListener("click", function () {
+          const nav = document.getElementById("navigation-drawer");
+          const expanded = nav.classList.toggle("open");
+          this.setAttribute("aria-expanded", expanded);
+        });
+
+      // Check if service worker is supported
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => {
+              console.log("Service worker registered successfully", reg);
+            })
+            .catch((err) => {
+              console.error("Service worker registration failed", err);
+            });
+        });
+      }
+
+      // Check for offline status
+      window.addEventListener("online", updateOnlineStatus);
+      window.addEventListener("offline", updateOnlineStatus);
+
+      function updateOnlineStatus() {
+        const offlineIndicator = document.getElementById("offlineIndicator");
+        if (navigator.onLine) {
+          offlineIndicator.style.display = "none";
+        } else {
+          offlineIndicator.style.display = "block";
+        }
+      }
+
+      // Initial check
+      updateOnlineStatus();
+    </script>
+  </body>
+</html>
