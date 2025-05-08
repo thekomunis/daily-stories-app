@@ -34,6 +34,80 @@ const urlBase64ToUint8Array = (base64String) => {
   return outputArray;
 };
 
+// Function to send subscription to server
+const sendSubscriptionToServer = async (subscription) => {
+  try {
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      return { error: true, message: "User not logged in" };
+    }
+
+    const response = await fetch(
+      `${CONFIG.BASE_API_URL}/notifications/subscribe`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: btoa(
+              String.fromCharCode.apply(
+                null,
+                new Uint8Array(subscription.getKey("p256dh"))
+              )
+            ),
+            auth: btoa(
+              String.fromCharCode.apply(
+                null,
+                new Uint8Array(subscription.getKey("auth"))
+              )
+            ),
+          },
+        }),
+      }
+    );
+
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error("Error sending subscription to server:", error);
+    return { error: true, message: error.message };
+  }
+};
+
+// Function to remove subscription from server
+const removeSubscriptionFromServer = async (subscription) => {
+  try {
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      return { error: true, message: "User not logged in" };
+    }
+
+    const response = await fetch(
+      `${CONFIG.BASE_API_URL}/notifications/subscribe`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+        }),
+      }
+    );
+
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error("Error removing subscription from server:", error);
+    return { error: true, message: error.message };
+  }
+};
+
 // Function to subscribe to push notification
 const subscribeToPushNotification = async () => {
   try {
@@ -76,14 +150,23 @@ const subscribeToPushNotification = async () => {
       applicationServerKey: convertedVapidKey,
     });
 
-    // Send the subscription to the server (if needed)
-    // In a real app, you would send this to your backend
-    console.log("Subscription successful:", subscription);
+    // Send the subscription to the server
+    const serverResponse = await sendSubscriptionToServer(subscription);
+
+    if (serverResponse.error) {
+      // If there was an error sending to server, unsubscribe locally
+      await subscription.unsubscribe();
+      return {
+        error: true,
+        message: serverResponse.message || "Failed to subscribe on server",
+      };
+    }
 
     return {
       error: false,
       message: "Successfully subscribed to push notifications",
       subscription,
+      serverData: serverResponse.data,
     };
   } catch (error) {
     console.error("Error subscribing to push notification:", error);
@@ -101,7 +184,20 @@ const unsubscribeFromPushNotification = async () => {
       return { error: false, message: "Not subscribed to push notifications" };
     }
 
+    // Remove subscription from server first
+    const serverResponse = await removeSubscriptionFromServer(subscription);
+
+    // Unsubscribe locally regardless of server response
     await subscription.unsubscribe();
+
+    if (serverResponse.error) {
+      return {
+        error: true,
+        message:
+          serverResponse.message ||
+          "Error unsubscribing from server, but unsubscribed locally",
+      };
+    }
 
     return {
       error: false,
