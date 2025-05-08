@@ -7,6 +7,7 @@ import { getActiveRoute as parseActiveUrlWithCombiner } from "./routes/url-parse
 import {
   subscribeToPushNotification,
   checkSubscription,
+  unsubscribeFromPushNotification,
 } from "./utils/notification-helper.js";
 
 class App {
@@ -32,30 +33,45 @@ class App {
       });
     }
 
+    // Handle unsubscribe notification button
+    const unsubscribeButton = document.getElementById(
+      "unsubscribeNotificationBtn"
+    );
+    if (unsubscribeButton) {
+      unsubscribeButton.addEventListener("click", async () => {
+        await this.handleUnsubscribeNotification();
+      });
+    }
+
     // Update push notification button state
     this.updatePushButtonState();
   }
 
   async updatePushButtonState() {
     const pushButton = document.getElementById("pushNotificationBtn");
-    if (!pushButton) return;
+    const unsubscribeButton = document.getElementById(
+      "unsubscribeNotificationBtn"
+    );
+    if (!pushButton || !unsubscribeButton) return;
 
     const subscriptionStatus = await checkSubscription();
 
     if (subscriptionStatus.error) {
       pushButton.textContent = "Notifications Not Supported";
       pushButton.disabled = true;
+      unsubscribeButton.style.display = "none";
       return;
     }
 
     if (subscriptionStatus.isSubscribed) {
-      pushButton.textContent = "Notifications Enabled";
-      pushButton.classList.remove("btn-primary");
-      pushButton.classList.add("btn-success");
+      pushButton.style.display = "none";
+      unsubscribeButton.style.display = "inline-block";
     } else {
+      pushButton.style.display = "inline-block";
       pushButton.textContent = "Enable Notifications";
       pushButton.classList.remove("btn-success");
       pushButton.classList.add("btn-primary");
+      unsubscribeButton.style.display = "none";
     }
   }
 
@@ -79,6 +95,29 @@ class App {
       }, 3000);
     } catch (error) {
       console.error("Error handling push notification:", error);
+    }
+  }
+
+  async handleUnsubscribeNotification() {
+    try {
+      const result = await unsubscribeFromPushNotification();
+      const toast = document.getElementById("toast");
+
+      if (result.error) {
+        toast.textContent = result.message;
+        toast.style.backgroundColor = "#dc3545"; // Red for error
+      } else {
+        toast.textContent = result.message;
+        toast.style.backgroundColor = "#28a745"; // Green for success
+        this.updatePushButtonState();
+      }
+
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    } catch (error) {
+      console.error("Error handling unsubscribe notification:", error);
     }
   }
 

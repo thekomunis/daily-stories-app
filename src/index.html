@@ -147,20 +147,41 @@
       }
 
       /* Custom notification subscription button */
-      #pushNotificationBtn {
+      #pushNotificationBtn,
+      #unsubscribeNotificationBtn {
         margin-top: 20px;
         padding: 10px 16px;
-        background-color: #007bff;
-        color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
         min-width: 44px;
         min-height: 44px;
+        transition: background-color 0.3s;
+      }
+
+      #pushNotificationBtn {
+        background-color: #007bff;
+        color: white;
       }
 
       #pushNotificationBtn:hover {
         background-color: #0069d9;
+      }
+
+      #unsubscribeNotificationBtn {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      #unsubscribeNotificationBtn:hover {
+        background-color: #5a6268;
+      }
+
+      .notification-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
       }
 
       /* Offline indicator */
@@ -301,12 +322,21 @@
       <footer>
         <div class="container">
           <p>&copy; 2023 Daily Stories App</p>
-          <button
-            id="pushNotificationBtn"
-            aria-label="Enable push notifications"
-          >
-            Enable Notifications
-          </button>
+          <div class="notification-buttons">
+            <button
+              id="pushNotificationBtn"
+              aria-label="Enable push notifications"
+            >
+              Enable Notifications
+            </button>
+            <button
+              id="unsubscribeNotificationBtn"
+              style="display: none"
+              aria-label="Disable push notifications"
+            >
+              Disable Notifications
+            </button>
+          </div>
         </div>
       </footer>
     </div>
