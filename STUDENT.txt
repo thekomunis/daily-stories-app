@@ -1,0 +1,2 @@
+APP_URL=https://username.github.io/daily-stories-app
+MAP_SERVICE_API_KEY=<api_key>
